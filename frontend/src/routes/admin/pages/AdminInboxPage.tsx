@@ -1489,6 +1489,27 @@ export function AdminInboxPage() {
     }
   }
 
+  // 커스텀 스크롤바 스타일
+  const scrollbarStyles = {
+    "&::-webkit-scrollbar": {
+      width: 6,
+      height: 6,
+    },
+    "&::-webkit-scrollbar-track": {
+      bgcolor: "transparent",
+    },
+    "&::-webkit-scrollbar-thumb": {
+      bgcolor: "rgba(100, 116, 139, 0.3)",
+      borderRadius: 3,
+      transition: "background-color 0.2s",
+      "&:hover": {
+        bgcolor: "rgba(100, 116, 139, 0.5)",
+      },
+    },
+    scrollbarWidth: "thin",
+    scrollbarColor: "rgba(100, 116, 139, 0.3) transparent",
+  };
+
   return (
     <Box
       sx={{
@@ -1505,6 +1526,8 @@ export function AdminInboxPage() {
         bgcolor: "background.default",
         overflow: "hidden",
         "& > *": { minWidth: 0 },
+        // 전체 스크롤바 스타일 적용
+        "& *": scrollbarStyles,
       }}
     >
       <Drawer
@@ -1597,8 +1620,8 @@ export function AdminInboxPage() {
         sx={{
           gridColumn: isXl ? "3 / 4" : "auto",
           bgcolor: "background.paper",
-          borderRight: { xs: "none", md: "1px solid" },
-          borderColor: "divider",
+          borderRight: { xs: "none", md: "1px solid rgba(255,255,255,0.06)" },
+          boxShadow: { xs: "none", md: "1px 0 8px rgba(0,0,0,0.08)" },
           minWidth: 0,
           // On small screens, switch between list and conversation based on selection id (not derived active object).
           display: { xs: activeId ? "none" : "flex", md: "flex" },
@@ -1871,8 +1894,8 @@ export function AdminInboxPage() {
             </Box>
           )}
         </Box>
-        <Divider />
-        <List dense sx={{ overflow: "auto", flex: 1, minHeight: 0, p: 1 }}>
+        <Divider sx={{ borderColor: "rgba(255,255,255,0.06)" }} />
+        <List dense sx={{ overflow: "auto", flex: 1, minHeight: 0, p: 1.5, pt: 1 }}>
           {!filtered ? (
             <Box sx={{ p: 2, color: "text.secondary" }}>불러오는 중…</Box>
           ) : filtered.length === 0 ? (
@@ -1953,10 +1976,15 @@ export function AdminInboxPage() {
                     sx={{
                       alignItems: "flex-start",
                       border: "1px solid",
-                      borderColor: selected ? "rgba(59,130,246,0.4)" : isChecked ? "rgba(249,115,22,0.35)" : pri === "URGENT" ? "rgba(220,38,38,0.3)" : pri === "HIGH" ? "rgba(249,115,22,0.25)" : "rgba(255,255,255,0.08)",
-                      borderRadius: 1.5,
-                      bgcolor: selected ? "rgba(59,130,246,0.12)" : isChecked ? "rgba(249,115,22,0.08)" : pri === "URGENT" ? "rgba(220,38,38,0.06)" : pri === "HIGH" ? "rgba(249,115,22,0.04)" : "rgba(255,255,255,0.03)",
-                      "&:hover": { bgcolor: selected ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.06)" },
+                      borderColor: selected ? "rgba(59,130,246,0.4)" : isChecked ? "rgba(249,115,22,0.35)" : pri === "URGENT" ? "rgba(220,38,38,0.3)" : pri === "HIGH" ? "rgba(249,115,22,0.25)" : "rgba(255,255,255,0.05)",
+                      borderRadius: 2,
+                      bgcolor: selected ? "rgba(59,130,246,0.12)" : isChecked ? "rgba(249,115,22,0.08)" : pri === "URGENT" ? "rgba(220,38,38,0.06)" : pri === "HIGH" ? "rgba(249,115,22,0.04)" : "rgba(255,255,255,0.02)",
+                      transition: "all 0.15s ease",
+                      "&:hover": {
+                        bgcolor: selected ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.06)",
+                        borderColor: selected ? "rgba(59,130,246,0.5)" : "rgba(255,255,255,0.12)",
+                        transform: "translateX(2px)",
+                      },
                       py: 1.25,
                       px: 1.5,
                       pl: (pri === "URGENT" || pri === "HIGH") ? 2 : 1.5,
@@ -2123,7 +2151,7 @@ export function AdminInboxPage() {
           overflow: "hidden",
         }}
       >
-        <Box sx={{ p: 1.5, borderBottom: "1px solid", borderColor: "divider", bgcolor: "rgba(37,99,235,0.03)" }}>
+        <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(255,255,255,0.06)", bgcolor: "rgba(37,99,235,0.02)", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, position: "relative", minHeight: 40 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <IconButton
@@ -2383,8 +2411,8 @@ export function AdminInboxPage() {
         <Box
           sx={{
             p: 2,
-            borderTop: "1px solid",
-            borderColor: "divider",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 -2px 8px rgba(0,0,0,0.06)",
             display: "grid",
             gap: 1,
             flex: "0 0 auto",
@@ -2491,16 +2519,16 @@ export function AdminInboxPage() {
                   right: 0,
                   mb: 0.5,
                   bgcolor: "background.paper",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 2,
-                  boxShadow: "0 -4px 20px rgba(0,0,0,0.3)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 2.5,
+                  boxShadow: "0 -4px 24px rgba(0,0,0,0.35)",
                   maxHeight: 280,
                   overflow: "auto",
                   zIndex: 10,
+                  backdropFilter: "blur(8px)",
                 }}
               >
-                <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider", bgcolor: "rgba(255,255,255,0.02)" }}>
+                <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid rgba(255,255,255,0.06)", bgcolor: "rgba(255,255,255,0.02)" }}>
                   <Typography sx={{ fontWeight: 700, fontSize: "0.8rem", color: "text.secondary" }}>
                     #{templateQuery || "템플릿"} · ↑↓ 선택 · Enter 적용 · ESC 닫기
                   </Typography>
@@ -2546,7 +2574,7 @@ export function AdminInboxPage() {
                     </Typography>
                   </Box>
                 ))}
-                <Box sx={{ px: 2, py: 1, borderTop: "1px solid", borderColor: "divider", bgcolor: "rgba(255,255,255,0.02)" }}>
+                <Box sx={{ px: 2, py: 1, borderTop: "1px solid rgba(255,255,255,0.06)", bgcolor: "rgba(255,255,255,0.02)" }}>
                   <Typography
                     component="a"
                     href="/admin/templates"
@@ -2561,11 +2589,16 @@ export function AdminInboxPage() {
             <Box
               sx={{
                 border: "1px solid",
-                borderColor: showTemplates ? "#2563EB" : "divider",
-                borderRadius: 2,
+                borderColor: showTemplates ? "#2563EB" : "rgba(255,255,255,0.1)",
+                borderRadius: 2.5,
                 bgcolor: "background.paper",
                 overflow: "hidden",
-                transition: "border-color 0.2s",
+                transition: "all 0.2s ease",
+                boxShadow: showTemplates ? "0 0 0 3px rgba(37,99,235,0.15)" : "0 2px 8px rgba(0,0,0,0.08)",
+                "&:focus-within": {
+                  borderColor: "#2563EB",
+                  boxShadow: "0 0 0 3px rgba(37,99,235,0.15)",
+                },
               }}
             >
               <TextField
@@ -2846,8 +2879,8 @@ export function AdminInboxPage() {
         sx={{
           gridColumn: isXl ? "7 / 8" : "auto",
           bgcolor: "background.paper",
-          borderLeft: "1px solid",
-          borderColor: "divider",
+          borderLeft: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "-1px 0 8px rgba(0,0,0,0.08)",
           p: 2,
           minWidth: 0,
           minHeight: 0,
