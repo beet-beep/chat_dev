@@ -294,6 +294,7 @@ export function AdminInboxPage() {
   const [aiAutoSuggest, setAiAutoSuggest] = useState(() => localStorage.getItem("admin_ai_auto_suggest") === "true");
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const templateJustAppliedRef = useRef<boolean>(false);
+  const replyValueRef = useRef<string>("");  // IME 조합 중 최신 값 추적용
 
   // 템플릿 로드
   useEffect(() => {
@@ -1044,7 +1045,7 @@ export function AdminInboxPage() {
     try {
       if (composerMode === "internal") {
         await adminAddTicketNote(active.id, reply.trim());
-        setReply("");
+        setReply(""); replyValueRef.current = "";
         setAiGeneratedDraft("");
         setAiSource(null);
         const n = await adminListTicketNotes(active.id);
@@ -1053,7 +1054,7 @@ export function AdminInboxPage() {
       } else {
         // 텍스트 없이 파일만 보내는 경우도 허용
         await adminStaffReplyWithFiles(active.id, { body: reply.trim() || "", files: replyFiles });
-        setReply("");
+        setReply(""); replyValueRef.current = "";
         setReplyFiles([]);
         setAiGeneratedDraft("");
         setAiSource(null);
@@ -1086,7 +1087,7 @@ export function AdminInboxPage() {
     setError(null);
     try {
       await adminStaffReplyWithFiles(active.id, { body: reply.trim() || "", files: replyFiles });
-      setReply("");
+      setReply(""); replyValueRef.current = "";
       setReplyFiles([]);
       setAiGeneratedDraft("");
       setAiSource(null);
@@ -1357,6 +1358,7 @@ export function AdminInboxPage() {
     try {
       const res = await adminAiGenerateReply(active.id);
       setReply(res.reply);
+      replyValueRef.current = res.reply || "";
       setAiGeneratedDraft(res.reply || "");
       setAiSource(res.source || "heuristic");
       setComposerMode("reply");
@@ -2538,10 +2540,13 @@ export function AdminInboxPage() {
                   <Box
                     key={t.id}
                     onClick={() => {
-                      // # 이전 텍스트 + 템플릿 내용
-                      const hashIdx = reply.lastIndexOf("#");
-                      const before = hashIdx >= 0 ? reply.slice(0, hashIdx) : reply;
-                      setReply(before + t.content);
+                      // 실제 입력 필드의 현재 값 사용 (IME 조합 문자 포함)
+                      const currentValue = replyInputRef.current?.value ?? replyValueRef.current ?? reply;
+                      const hashIdx = currentValue.lastIndexOf("#");
+                      const before = hashIdx >= 0 ? currentValue.slice(0, hashIdx) : "";
+                      const newValue = before + t.content;
+                      setReply(newValue);
+                      replyValueRef.current = newValue;
                       setShowTemplates(false);
                       setTemplateQuery("");
                       // 템플릿 적용 직후 Enter로 바로 전송되지 않도록 플래그 설정
@@ -2622,6 +2627,7 @@ export function AdminInboxPage() {
                 onChange={(e) => {
                   const val = e.target.value;
                   setReply(val);
+                  replyValueRef.current = val;  // ref도 동기화
 
                   // AI 생성 텍스트와 다르면 AI 상태 초기화
                   if (val !== aiGeneratedDraft) {
@@ -2657,11 +2663,15 @@ export function AdminInboxPage() {
                     }
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      const t = filteredTemplates[templateSelectedIdx];
-                      if (t) {
-                        const hashIdx = reply.lastIndexOf("#");
-                        const before = hashIdx >= 0 ? reply.slice(0, hashIdx) : reply;
-                        setReply(before + t.content);
+                      const tpl = filteredTemplates[templateSelectedIdx];
+                      if (tpl) {
+                        // 실제 입력 필드의 현재 값 사용 (IME 조합 문자 포함)
+                        const currentValue = replyInputRef.current?.value ?? replyValueRef.current ?? reply;
+                        const hashIdx = currentValue.lastIndexOf("#");
+                        const before = hashIdx >= 0 ? currentValue.slice(0, hashIdx) : "";
+                        const newValue = before + tpl.content;
+                        setReply(newValue);
+                        replyValueRef.current = newValue;
                         // 템플릿 적용 직후 Enter로 바로 전송되지 않도록 플래그 설정
                         templateJustAppliedRef.current = true;
                         setTimeout(() => { templateJustAppliedRef.current = false; }, 300);
@@ -2737,7 +2747,11 @@ export function AdminInboxPage() {
                   <Button
                     size="small"
                     onClick={() => {
-                      setReply((prev) => prev + "#");
+                      setReply((prev) => {
+                        const newVal = prev + "#";
+                        replyValueRef.current = newVal;
+                        return newVal;
+                      });
                       setShowTemplates(true);
                       setTemplateQuery("");
                       replyInputRef.current?.focus();
