@@ -2249,7 +2249,7 @@ export function AdminInboxPage() {
             </Typography>
           ) : (
             <React.Fragment>
-              <Box sx={{ position: "relative", minHeight: 0, flex: 1, overflow: "hidden" }}>
+              <Box sx={{ position: "relative", minHeight: 0, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
               {!chatScroll.isAtBottom && chatScroll.unread > 0 ? (
                 <Button
                   size="small"
@@ -2263,7 +2263,8 @@ export function AdminInboxPage() {
               <Box
                 ref={chatScroll.scrollerRef}
                 sx={{
-                  overflow: "auto",
+                  overflowY: "auto",
+                  overflowX: "hidden",
                   flex: 1,
                   minHeight: 0,
                   pr: 0.5,
