@@ -721,7 +721,7 @@ export function AdminInboxPage() {
       else data = [];
     }
 
-    const dir = sortDir === "DESC" ? -1 : 1;
+    const dir = sortDir === "DESC" ? 1 : -1;
     const sorted = [...data].sort((a, b) => {
       const ta = ticketTimes(a);
       const tb = ticketTimes(b);
