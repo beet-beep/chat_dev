@@ -294,6 +294,7 @@ export function AdminInboxPage() {
   const [aiAutoSuggest, setAiAutoSuggest] = useState(() => localStorage.getItem("admin_ai_auto_suggest") === "true");
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
   const templateJustAppliedRef = useRef<boolean>(false);
+  const templateApplyingRef = useRef<boolean>(false);  // 템플릿 적용 중 onChange 차단용
   const replyValueRef = useRef<string>("");  // IME 조합 중 최신 값 추적용
 
   // 템플릿 로드
@@ -2539,19 +2540,33 @@ export function AdminInboxPage() {
                 {filteredTemplates.map((t, idx) => (
                   <Box
                     key={t.id}
-                    onClick={() => {
-                      // 실제 입력 필드의 현재 값 사용 (IME 조합 문자 포함)
+                    onMouseDown={(e) => {
+                      // 클릭 시작할 때 템플릿 적용 모드 활성화 (onChange 차단)
+                      e.preventDefault();  // 입력 필드 blur 방지
+                      templateApplyingRef.current = true;
+
+                      // # 이전 텍스트 + 템플릿 내용
                       const currentValue = replyInputRef.current?.value ?? replyValueRef.current ?? reply;
                       const hashIdx = currentValue.lastIndexOf("#");
                       const before = hashIdx >= 0 ? currentValue.slice(0, hashIdx) : "";
                       const newValue = before + t.content;
+
+                      // 입력 필드 값을 직접 설정
+                      if (replyInputRef.current) {
+                        replyInputRef.current.value = newValue;
+                      }
                       setReply(newValue);
                       replyValueRef.current = newValue;
                       setShowTemplates(false);
                       setTemplateQuery("");
+
                       // 템플릿 적용 직후 Enter로 바로 전송되지 않도록 플래그 설정
                       templateJustAppliedRef.current = true;
-                      setTimeout(() => { templateJustAppliedRef.current = false; }, 300);
+                      setTimeout(() => {
+                        templateJustAppliedRef.current = false;
+                        templateApplyingRef.current = false;
+                      }, 100);
+
                       replyInputRef.current?.focus();
                     }}
                     sx={{
@@ -2625,6 +2640,10 @@ export function AdminInboxPage() {
                 value={reply}
                 disabled={busy || sendBusy || !activeId}
                 onChange={(e) => {
+                  // 템플릿 적용 중에는 onChange 무시 (IME 커밋으로 인한 덮어쓰기 방지)
+                  if (templateApplyingRef.current) {
+                    return;
+                  }
                   const val = e.target.value;
                   setReply(val);
                   replyValueRef.current = val;  // ref도 동기화
@@ -2665,16 +2684,28 @@ export function AdminInboxPage() {
                       e.preventDefault();
                       const tpl = filteredTemplates[templateSelectedIdx];
                       if (tpl) {
-                        // 실제 입력 필드의 현재 값 사용 (IME 조합 문자 포함)
+                        // onChange 차단
+                        templateApplyingRef.current = true;
+
+                        // # 이전 텍스트 + 템플릿 내용
                         const currentValue = replyInputRef.current?.value ?? replyValueRef.current ?? reply;
                         const hashIdx = currentValue.lastIndexOf("#");
                         const before = hashIdx >= 0 ? currentValue.slice(0, hashIdx) : "";
                         const newValue = before + tpl.content;
+
+                        // 입력 필드 값을 직접 설정
+                        if (replyInputRef.current) {
+                          replyInputRef.current.value = newValue;
+                        }
                         setReply(newValue);
                         replyValueRef.current = newValue;
-                        // 템플릿 적용 직후 Enter로 바로 전송되지 않도록 플래그 설정
+
+                        // 플래그 해제
                         templateJustAppliedRef.current = true;
-                        setTimeout(() => { templateJustAppliedRef.current = false; }, 300);
+                        setTimeout(() => {
+                          templateJustAppliedRef.current = false;
+                          templateApplyingRef.current = false;
+                        }, 100);
                       }
                       setShowTemplates(false);
                       setTemplateQuery("");
