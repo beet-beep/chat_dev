@@ -725,15 +725,18 @@ export function AdminInboxPage() {
     const sorted = [...data].sort((a, b) => {
       const ta = ticketTimes(a);
       const tb = ticketTimes(b);
-      if (sortBy === "CREATED") return (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) * dir;
-      if (sortBy === "UPDATED") return (ta.lastAnyAt - tb.lastAnyAt) * dir;
-      // WAIT: needsReply 우선 + 대기시간 큰 것부터
+      if (sortBy === "CREATED") return (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) * dir;
+      if (sortBy === "UPDATED") return (tb.lastAnyAt - ta.lastAnyAt) * dir;
+      // WAIT: needsReply 우선 + 대기시간 큰 것부터 (새 문의는 상단에 표시)
       const aNeeds = ta.lastUserAt > ta.lastStaffAt && a.status !== "CLOSED";
       const bNeeds = tb.lastUserAt > tb.lastStaffAt && b.status !== "CLOSED";
       if (aNeeds !== bNeeds) return (aNeeds ? -1 : 1) * dir;
-      const aWait = aNeeds ? Date.now() - ta.lastUserAt : 0;
-      const bWait = bNeeds ? Date.now() - tb.lastUserAt : 0;
-      return (aWait - bWait) * dir;
+      // 대기 중인 티켓: 최근 생성된 것이 상단에 (새 문의 우선)
+      if (aNeeds && bNeeds) {
+        return (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) * dir;
+      }
+      // 답변 완료 티켓: 최근 업데이트된 것이 상단에
+      return (tb.lastAnyAt - ta.lastAnyAt) * dir;
     });
     return sorted;
   }, [items, q, statusTab, tagFilter, assigneeFilter, priorityFilter, channelFilter, entryFilter, sortBy, sortDir, primaryTab, adminUserId]);

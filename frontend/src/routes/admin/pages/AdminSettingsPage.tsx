@@ -38,6 +38,9 @@ import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import LanguageIcon from "@mui/icons-material/Language";
 import PersonIcon from "@mui/icons-material/Person";
 import HeadsetMicIcon from "@mui/icons-material/HeadsetMic";
+import CampaignIcon from "@mui/icons-material/Campaign";
+import SaveIcon from "@mui/icons-material/Save";
+import { TranslateButton } from "../components/TranslationProvider";
 
 type Setting = {
   key: string;
@@ -63,7 +66,7 @@ export function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
-  const [activeTab, setActiveTab] = useState<"account" | "policy">("account");
+  const [activeTab, setActiveTab] = useState<"account" | "notice" | "policy">("account");
   const [deleteDialog, setDeleteDialog] = useState(false);
 
   // Account settings state
@@ -186,6 +189,13 @@ export function AdminSettingsPage() {
   }
 
   const policySettings = settings.filter((s) => s.key.startsWith("policy_"));
+  const noticeSettings = settings.filter((s) => s.key.startsWith("notice_"));
+
+  // Helper to get notice value by key
+  const getNotice = (key: string) => noticeSettings.find((s) => s.key === key)?.value || "";
+  const setNotice = (key: string, value: string) => {
+    setSettings((prev) => prev.map((s) => (s.key === key ? { ...s, value } : s)));
+  };
 
   // Settings Row Component
   function SettingsRow({
@@ -230,7 +240,7 @@ export function AdminSettingsPage() {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 900, mx: "auto" }}>
+    <Box sx={{ p: 3, maxWidth: 900, mx: "auto", height: "100%", overflow: "auto" }}>
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
         <SettingsIcon sx={{ fontSize: 32, color: "primary.main" }} />
@@ -253,6 +263,14 @@ export function AdminSettingsPage() {
           sx={{ fontWeight: 700, borderRadius: 2 }}
         >
           계정 관리
+        </Button>
+        <Button
+          variant={activeTab === "notice" ? "contained" : "outlined"}
+          onClick={() => setActiveTab("notice")}
+          startIcon={<CampaignIcon />}
+          sx={{ fontWeight: 700, borderRadius: 2 }}
+        >
+          운영 안내
         </Button>
         <Button
           variant={activeTab === "policy" ? "contained" : "outlined"}
@@ -566,6 +584,221 @@ export function AdminSettingsPage() {
                 계정 삭제
               </Button>
             </SettingsRow>
+          </Card>
+        </Box>
+      ) : activeTab === "notice" ? (
+        /* 운영 안내 탭 */
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* 상단 고정 액션 바 */}
+          <Card sx={{ overflow: "hidden", position: "sticky", top: 0, zIndex: 10 }}>
+            <Box sx={{ px: 3, py: 2, bgcolor: (theme) => alpha(theme.palette.warning.main, 0.08), display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                  <CampaignIcon fontSize="small" />
+                  고객센터 운영 안내
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                  문의하기 첫 화면에 표시되는 운영 안내를 수정합니다.
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <TranslateButton
+                  label="운영 안내"
+                  items={[
+                    { key: "title", text: getNotice("notice_title") },
+                    { key: "hours", text: getNotice("notice_hours") },
+                    { key: "extra", text: getNotice("notice_extra") },
+                  ]}
+                  onComplete={(results) => {
+                    if (results.title) {
+                      if (results.title.en) setNotice("notice_title_en", results.title.en);
+                      if (results.title.ja) setNotice("notice_title_ja", results.title.ja);
+                      if (results.title["zh-TW"]) setNotice("notice_title_zh-TW", results.title["zh-TW"]);
+                    }
+                    if (results.hours) {
+                      if (results.hours.en) setNotice("notice_hours_en", results.hours.en);
+                      if (results.hours.ja) setNotice("notice_hours_ja", results.hours.ja);
+                      if (results.hours["zh-TW"]) setNotice("notice_hours_zh-TW", results.hours["zh-TW"]);
+                    }
+                    if (results.extra) {
+                      if (results.extra.en) setNotice("notice_extra_en", results.extra.en);
+                      if (results.extra.ja) setNotice("notice_extra_ja", results.extra.ja);
+                      if (results.extra["zh-TW"]) setNotice("notice_extra_zh-TW", results.extra["zh-TW"]);
+                    }
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  sx={{ fontWeight: 700, px: 3 }}
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      for (const s of noticeSettings) {
+                        await apiFetch(
+                          `/admin/settings/${s.key}/`,
+                          {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ value: s.value }),
+                          },
+                          "admin_token"
+                        );
+                      }
+                      setToast("저장되었습니다");
+                      await refresh();
+                    } catch (e: any) {
+                      setToast("저장 실패: " + (e?.message || e));
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  저장
+                </Button>
+              </Box>
+            </Box>
+          </Card>
+
+          {/* 한국어 */}
+          <Card sx={{ overflow: "hidden" }}>
+            <Box sx={{ px: 3, py: 1.5, bgcolor: "rgba(0,0,0,0.02)", borderBottom: "1px solid", borderColor: "divider" }}>
+              <Typography sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                🇰🇷 한국어 (원본)
+              </Typography>
+            </Box>
+            <Box sx={{ p: 2, display: "grid", gap: 2 }}>
+              <TextField
+                label="안내 제목"
+                fullWidth
+                size="small"
+                value={getNotice("notice_title")}
+                onChange={(e) => setNotice("notice_title", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="운영 시간"
+                fullWidth
+                size="small"
+                value={getNotice("notice_hours")}
+                onChange={(e) => setNotice("notice_hours", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="추가 안내"
+                fullWidth
+                size="small"
+                value={getNotice("notice_extra")}
+                onChange={(e) => setNotice("notice_extra", e.target.value)}
+                disabled={busy}
+              />
+            </Box>
+          </Card>
+
+          {/* English */}
+          <Card sx={{ overflow: "hidden" }}>
+            <Box sx={{ px: 3, py: 1.5, bgcolor: "rgba(0,0,0,0.02)", borderBottom: "1px solid", borderColor: "divider" }}>
+              <Typography sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                🇺🇸 English
+              </Typography>
+            </Box>
+            <Box sx={{ p: 2, display: "grid", gap: 2 }}>
+              <TextField
+                label="Title"
+                fullWidth
+                size="small"
+                value={getNotice("notice_title_en")}
+                onChange={(e) => setNotice("notice_title_en", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="Hours"
+                fullWidth
+                size="small"
+                value={getNotice("notice_hours_en")}
+                onChange={(e) => setNotice("notice_hours_en", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="Extra"
+                fullWidth
+                size="small"
+                value={getNotice("notice_extra_en")}
+                onChange={(e) => setNotice("notice_extra_en", e.target.value)}
+                disabled={busy}
+              />
+            </Box>
+          </Card>
+
+          {/* 日本語 */}
+          <Card sx={{ overflow: "hidden" }}>
+            <Box sx={{ px: 3, py: 1.5, bgcolor: "rgba(0,0,0,0.02)", borderBottom: "1px solid", borderColor: "divider" }}>
+              <Typography sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                🇯🇵 日本語
+              </Typography>
+            </Box>
+            <Box sx={{ p: 2, display: "grid", gap: 2 }}>
+              <TextField
+                label="タイトル"
+                fullWidth
+                size="small"
+                value={getNotice("notice_title_ja")}
+                onChange={(e) => setNotice("notice_title_ja", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="営業時間"
+                fullWidth
+                size="small"
+                value={getNotice("notice_hours_ja")}
+                onChange={(e) => setNotice("notice_hours_ja", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="追加案内"
+                fullWidth
+                size="small"
+                value={getNotice("notice_extra_ja")}
+                onChange={(e) => setNotice("notice_extra_ja", e.target.value)}
+                disabled={busy}
+              />
+            </Box>
+          </Card>
+
+          {/* 繁體中文 */}
+          <Card sx={{ overflow: "hidden" }}>
+            <Box sx={{ px: 3, py: 1.5, bgcolor: "rgba(0,0,0,0.02)", borderBottom: "1px solid", borderColor: "divider" }}>
+              <Typography sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
+                🇹🇼 繁體中文
+              </Typography>
+            </Box>
+            <Box sx={{ p: 2, display: "grid", gap: 2 }}>
+              <TextField
+                label="標題"
+                fullWidth
+                size="small"
+                value={getNotice("notice_title_zh-TW")}
+                onChange={(e) => setNotice("notice_title_zh-TW", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="營業時間"
+                fullWidth
+                size="small"
+                value={getNotice("notice_hours_zh-TW")}
+                onChange={(e) => setNotice("notice_hours_zh-TW", e.target.value)}
+                disabled={busy}
+              />
+              <TextField
+                label="額外說明"
+                fullWidth
+                size="small"
+                value={getNotice("notice_extra_zh-TW")}
+                onChange={(e) => setNotice("notice_extra_zh-TW", e.target.value)}
+                disabled={busy}
+              />
+            </Box>
           </Card>
         </Box>
       ) : (

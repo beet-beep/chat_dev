@@ -16,12 +16,21 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { listTicketCategories } from "../api/support";
+import { apiFetch } from "../api/client";
 import type { TicketCategory } from "../api/types";
 import { useT, useLanguage } from "../i18n";
 import { LanguageSelector } from "../i18n/LanguageSelector";
 
-function categorySnippet(c: TicketCategory, fallback: string) {
-  const blocks = Array.isArray(c.bot_blocks) ? c.bot_blocks : [];
+type AppSetting = { key: string; value: string };
+
+function categorySnippet(c: TicketCategory, fallback: string, lang: string) {
+  // 현재 언어에 맞는 bot_blocks_i18n 우선 사용
+  let blocks: any[] = [];
+  if (lang !== "ko" && Array.isArray(c.bot_blocks_i18n?.[lang]) && c.bot_blocks_i18n[lang].length > 0) {
+    blocks = c.bot_blocks_i18n[lang];
+  } else {
+    blocks = Array.isArray(c.bot_blocks) ? c.bot_blocks : [];
+  }
   const first = blocks.find((b: any) => b && b.type === "paragraph" && String(b.text || "").trim());
   const t = String(first?.text ?? "").replace(/\s+/g, " ").trim();
   return t ? (t.length > 54 ? `${t.slice(0, 54)}…` : t) : fallback;
@@ -43,6 +52,21 @@ export function NewTicketStartPage() {
   const { lang } = useLanguage();
 
   const [cats, setCats] = useState<TicketCategory[] | null>(null);
+  const [settings, setSettings] = useState<AppSetting[]>([]);
+
+  // Helper to get notice value from settings with language suffix
+  const getNotice = (base: string): string => {
+    const suffix = lang === "ko" ? "" : `_${lang}`;
+    const key = `notice_${base}${suffix}`;
+    const found = settings.find((s) => s.key === key);
+    if (found?.value) return found.value;
+    // Fallback to Korean if no translation
+    const koKey = `notice_${base}`;
+    const koFound = settings.find((s) => s.key === koKey);
+    if (koFound?.value) return koFound.value;
+    // Ultimate fallback to i18n
+    return t(`newStart.notice.${base}` as any);
+  };
 
   useEffect(() => {
     const mode = sp.get("mode");
@@ -66,6 +90,15 @@ export function NewTicketStartPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Fetch app settings for notice
+  useEffect(() => {
+    apiFetch<AppSetting[]>("/settings/")
+      .then((data) => {
+        if (Array.isArray(data)) setSettings(data);
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -177,16 +210,16 @@ export function NewTicketStartPage() {
                 <InfoOutlinedIcon sx={{ fontSize: 20, color: "info.main" }} />
               </Box>
               <Box>
-                <Typography sx={{ fontWeight: 700, mb: 0.75, fontSize: "0.9375rem" }}>{t("newStart.notice.title")}</Typography>
+                <Typography sx={{ fontWeight: 700, mb: 0.75, fontSize: "0.9375rem" }}>{getNotice("title")}</Typography>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <AccessTimeIcon sx={{ fontSize: 14, color: "text.secondary" }} />
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.8125rem" }}>
-                      {t("newStart.notice.hours")}
+                      {getNotice("hours")}
                     </Typography>
                   </Box>
                   <Typography variant="caption" color="text.secondary" sx={{ pl: 2.5, fontSize: "0.75rem" }}>
-                    {t("newStart.notice.extra")}
+                    {getNotice("extra")}
                   </Typography>
                 </Box>
               </Box>
@@ -291,7 +324,7 @@ export function NewTicketStartPage() {
                           mb: 0.5,
                         }}
                       >
-                        {categorySnippet(c, t("newStart.category.snippet.default"))}
+                        {categorySnippet(c, t("newStart.category.snippet.default"), lang)}
                       </Typography>
                       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
                         <Typography
