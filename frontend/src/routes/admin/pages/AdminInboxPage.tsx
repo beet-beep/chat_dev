@@ -293,6 +293,7 @@ export function AdminInboxPage() {
   const [snackMsg, setSnackMsg] = useState<string | null>(null);
   const [aiAutoSuggest, setAiAutoSuggest] = useState(() => localStorage.getItem("admin_ai_auto_suggest") === "true");
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const templateJustAppliedRef = useRef<boolean>(false);
 
   // 템플릿 로드
   useEffect(() => {
@@ -2543,6 +2544,9 @@ export function AdminInboxPage() {
                       setReply(before + t.content);
                       setShowTemplates(false);
                       setTemplateQuery("");
+                      // 템플릿 적용 직후 Enter로 바로 전송되지 않도록 플래그 설정
+                      templateJustAppliedRef.current = true;
+                      setTimeout(() => { templateJustAppliedRef.current = false; }, 300);
                       replyInputRef.current?.focus();
                     }}
                     sx={{
@@ -2658,6 +2662,9 @@ export function AdminInboxPage() {
                         const hashIdx = reply.lastIndexOf("#");
                         const before = hashIdx >= 0 ? reply.slice(0, hashIdx) : reply;
                         setReply(before + t.content);
+                        // 템플릿 적용 직후 Enter로 바로 전송되지 않도록 플래그 설정
+                        templateJustAppliedRef.current = true;
+                        setTimeout(() => { templateJustAppliedRef.current = false; }, 300);
                       }
                       setShowTemplates(false);
                       setTemplateQuery("");
@@ -2670,6 +2677,10 @@ export function AdminInboxPage() {
                     }
                   }
 
+                  // 템플릿 적용 직후에는 전송하지 않음
+                  if (templateJustAppliedRef.current) {
+                    return;
+                  }
                   // Ctrl+Enter: 전송 & 종료
                   if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !showTemplates) {
                     e.preventDefault();
