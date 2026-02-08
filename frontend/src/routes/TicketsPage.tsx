@@ -4,7 +4,6 @@ import {
   CardActionArea,
   CardContent,
   Chip,
-  CircularProgress,
   Divider,
   TextField,
   Button,
@@ -12,7 +11,6 @@ import {
   Typography,
   alpha,
   InputAdornment,
-  Avatar,
   Skeleton,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -24,7 +22,12 @@ import SearchIcon from "@mui/icons-material/Search";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AddIcon from "@mui/icons-material/Add";
 import { useT, useLocale, useLanguage } from "../i18n";
+import { GradientHeader } from "../ui/GradientHeader";
+import { LanguageSelector } from "../i18n/LanguageSelector";
+import { StatusChip, CategoryChip } from "../ui/StatusChip";
+import { EmptyState } from "../ui/EmptyState";
 
 export function TicketsPage() {
   const nav = useNavigate();
@@ -38,44 +41,11 @@ export function TicketsPage() {
   const [page, setPage] = useState(1);
   const hasToken = Boolean(localStorage.getItem("auth_token"));
 
-  function statusChip(status: "PENDING" | "ANSWERED" | "CLOSED") {
-    if (status === "ANSWERED") return (
-      <Chip
-        size="small"
-        label={t("tickets.status.answered")}
-        sx={{
-          bgcolor: (theme) => alpha(theme.palette.success.main, 0.12),
-          color: "success.dark",
-          fontWeight: 700,
-          height: 24,
-        }}
-      />
-    );
-    if (status === "PENDING") return (
-      <Chip
-        size="small"
-        label={t("tickets.status.pending")}
-        sx={{
-          bgcolor: (theme) => alpha(theme.palette.warning.main, 0.15),
-          color: "warning.dark",
-          fontWeight: 700,
-          height: 24,
-        }}
-      />
-    );
-    return (
-      <Chip
-        size="small"
-        label={t("tickets.status.closed")}
-        sx={{
-          bgcolor: (theme) => alpha(theme.palette.text.secondary, 0.1),
-          color: "text.secondary",
-          fontWeight: 600,
-          height: 24,
-        }}
-      />
-    );
-  }
+  const statusLabels = {
+    PENDING: t("tickets.status.pending"),
+    ANSWERED: t("tickets.status.answered"),
+    CLOSED: t("tickets.status.closed"),
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -102,33 +72,15 @@ export function TicketsPage() {
   }, [page, hasToken]);
 
   return (
-    <Box sx={{ px: 2.5, pt: 3, pb: 2 }}>
-      <Box sx={{ textAlign: "center", mb: 3 }}>
-        <Box
-          sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 56,
-            height: 56,
-            borderRadius: 4,
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-            mb: 2,
-          }}
-        >
-          <InboxOutlinedIcon sx={{ fontSize: 28, color: "primary.main" }} />
-        </Box>
-        <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5 }}>
-          {t("tickets.header")}
-        </Typography>
-        <Typography
-          color="text.secondary"
-          sx={{ fontSize: "0.9375rem" }}
-          dangerouslySetInnerHTML={{
-            __html: t("tickets.count", { count: data ? String(data.count) : "-" }),
-          }}
-        />
-      </Box>
+    <Box>
+      <GradientHeader
+        title={t("tickets.header")}
+        subtitle={t("tickets.count", { count: data ? String(data.count) : "-" }).replace(/<[^>]*>/g, "")}
+        icon={<InboxOutlinedIcon />}
+        right={<LanguageSelector />}
+      />
+
+      <Box sx={{ px: 2.5, pt: 2, pb: 2, mt: -2 }}>
 
       <Card
         sx={{
@@ -224,19 +176,13 @@ export function TicketsPage() {
       ) : null}
 
       {data?.results.length === 0 ? (
-        <Card sx={{ textAlign: "center", py: 6 }}>
-          <InboxOutlinedIcon sx={{ fontSize: 48, color: "text.secondary", opacity: 0.3, mb: 2 }} />
-          <Typography color="text.secondary" sx={{ fontSize: "0.9375rem" }}>
-            {t("tickets.empty")}
-          </Typography>
-          <Button
-            variant="contained"
-            sx={{ mt: 2 }}
-            onClick={() => nav("/new")}
-          >
-            {t("tickets.emptyAction")}
-          </Button>
-        </Card>
+        <EmptyState
+          icon={<InboxOutlinedIcon />}
+          title={t("tickets.empty")}
+          description={t("tickets.emptyDesc") || undefined}
+          action={t("tickets.emptyAction")}
+          onAction={() => nav("/new")}
+        />
       ) : null}
 
       {data?.results && data.results.length > 0 ? (
@@ -279,7 +225,7 @@ export function TicketsPage() {
                             color: "primary.main",
                           }}
                         />
-                        {statusChip(tk.status)}
+                        <StatusChip status={tk.status} labels={statusLabels} />
                         <Chip
                           size="small"
                           label={(lang !== "ko" && tk.category?.name_i18n?.[lang]) || (tk.category?.name ?? t("nav.new"))}
@@ -349,6 +295,7 @@ export function TicketsPage() {
           />
         </Box>
       ) : null}
+      </Box>
     </Box>
   );
 }

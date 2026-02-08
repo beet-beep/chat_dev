@@ -2,14 +2,13 @@ import {
   Alert,
   Avatar,
   Box,
-  Button,
   Card,
   Chip,
-  CircularProgress,
-  Divider,
+  Skeleton,
   Typography,
+  alpha,
 } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -20,6 +19,9 @@ import { ChatThread, type ChatMessage } from "../ui/chat/ChatThread";
 import { useChatAutoScroll } from "../ui/chat/useChatAutoScroll";
 import { markSeen } from "../ui/chat/seen";
 import { useT, useLocale, useLanguage } from "../i18n";
+import { GradientHeader } from "../ui/GradientHeader";
+import { LanguageSelector } from "../i18n/LanguageSelector";
+import { StatusChip } from "../ui/StatusChip";
 
 export function TicketDetailPage() {
   const { id } = useParams();
@@ -162,22 +164,23 @@ export function TicketDetailPage() {
     if (last?.created_at) markSeen(ticket.id, last.created_at);
   }, [ticket?.id, thread.length]);
 
-  return (
-    <Box sx={{ px: 2.5, pt: 2.5, pb: 2, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-        <Button
-          startIcon={<ArrowBackIosNewIcon />}
-          onClick={() => nav("/tickets")}
-          sx={{ fontWeight: 700, color: "text.primary" }}
-        >
-          {t("ticketDetail.back")}
-        </Button>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          {t("ticketDetail.title")}
-        </Typography>
-        <Box sx={{ width: 72 }} />
-      </Box>
+  const statusLabels = {
+    PENDING: t("tickets.status.pending"),
+    ANSWERED: t("tickets.status.answered"),
+    CLOSED: t("tickets.status.closed"),
+  };
 
+  return (
+    <Box sx={{ bgcolor: "#f8f9fa", minHeight: "100vh" }}>
+      <GradientHeader
+        title={ticket ? `#${ticket.id}` : t("ticketDetail.title")}
+        subtitle={ticket?.title || ""}
+        icon={<ChatBubbleOutlineIcon />}
+        backTo="/tickets"
+        right={<LanguageSelector />}
+      />
+
+      <Box sx={{ px: 2.5, pt: 2, pb: 2, mt: -2 }}>
       {error ? (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
           {error}
@@ -185,68 +188,38 @@ export function TicketDetailPage() {
       ) : null}
 
       {!ticket && !error ? (
-        <Box sx={{ py: 4, display: "grid", placeItems: "center" }}>
-          <CircularProgress />
-        </Box>
+        <Card sx={{ borderRadius: 2.5, p: 3 }}>
+          <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+            <Skeleton variant="rounded" width={50} height={24} />
+            <Skeleton variant="rounded" width={70} height={24} />
+          </Box>
+          <Skeleton variant="text" width="80%" height={28} sx={{ mb: 1 }} />
+          <Skeleton variant="rounded" height={200} />
+        </Card>
       ) : null}
 
       {ticket ? (
         <Box sx={{ maxWidth: 900, mx: "auto" }}>
           <Card sx={{ mb: 2, borderRadius: 2, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
             <Box sx={{ p: 3 }}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 2 }}>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 2, flexWrap: "wrap" }}>
                 <Chip
                   size="small"
                   label={`#${ticket.id}`}
                   sx={{
-                    bgcolor: "#f0f0f0",
-                    color: "text.secondary",
-                    fontWeight: 600,
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                    color: "primary.main",
+                    fontWeight: 700,
                     fontSize: "0.75rem"
                   }}
                 />
-                {ticket.status === "ANSWERED" && (
-                  <Chip
-                    size="small"
-                    label={ticket.status_label}
-                    sx={{
-                      bgcolor: "#e8f5e9",
-                      color: "#2e7d32",
-                      fontWeight: 600,
-                      fontSize: "0.75rem"
-                    }}
-                  />
-                )}
-                {ticket.status === "PENDING" && (
-                  <Chip
-                    size="small"
-                    label={ticket.status_label}
-                    sx={{
-                      bgcolor: "#fff3e0",
-                      color: "#e65100",
-                      fontWeight: 600,
-                      fontSize: "0.75rem"
-                    }}
-                  />
-                )}
-                {ticket.status === "CLOSED" && (
-                  <Chip
-                    size="small"
-                    label={ticket.status_label}
-                    sx={{
-                      bgcolor: "#f5f5f5",
-                      color: "text.secondary",
-                      fontWeight: 600,
-                      fontSize: "0.75rem"
-                    }}
-                  />
-                )}
+                <StatusChip status={ticket.status} labels={statusLabels} />
                 {ticket.category?.name && (
                   <Chip
                     size="small"
                     label={(lang !== "ko" && ticket.category.name_i18n?.[lang]) || ticket.category.name}
                     sx={{
-                      bgcolor: "#e3f2fd",
+                      bgcolor: (theme) => alpha(theme.palette.info.main, 0.1),
                       color: "#1565c0",
                       fontWeight: 600,
                       fontSize: "0.75rem"
@@ -472,6 +445,7 @@ export function TicketDetailPage() {
           )}
         </Box>
       ) : null}
+      </Box>
     </Box>
   );
 }

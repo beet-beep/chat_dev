@@ -1,13 +1,14 @@
 import {
   Box,
-  Button,
   Card,
   CardContent,
   CircularProgress,
   Divider,
   Typography,
+  Skeleton,
+  alpha,
 } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -15,6 +16,8 @@ import { getFaq, trackFaqView } from "../api/support";
 import type { Faq } from "../api/types";
 import DOMPurify from "dompurify";
 import { useT, useLocale, useLanguage } from "../i18n";
+import { GradientHeader } from "../ui/GradientHeader";
+import { LanguageSelector } from "../i18n/LanguageSelector";
 
 // Generate a session ID for anonymous view tracking
 function getSessionId() {
@@ -91,21 +94,24 @@ export function FaqDetailPage() {
   }
 
   return (
-    <Box sx={{ px: 2.5, pt: 2.5, pb: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-        <Button startIcon={<ArrowBackIosNewIcon />} onClick={() => nav("/faq")} sx={{ fontWeight: 900 }}>
-          {t("faqDetail.back")}
-        </Button>
-        <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
-          {t("faqDetail.title")}
-        </Typography>
-        <Box sx={{ width: 72 }} />
-      </Box>
+    <Box>
+      <GradientHeader
+        title={t("faqDetail.title")}
+        subtitle={faq ? ((lang !== "ko" && faq.category?.name_i18n?.[lang]) || faq.category?.name || "FAQ") : ""}
+        icon={<HelpOutlineIcon />}
+        backTo="/faq"
+        right={<LanguageSelector />}
+      />
 
+      <Box sx={{ px: 2.5, pt: 2, pb: 2, mt: -2 }}>
       {!faq && !error ? (
-        <Box sx={{ py: 4, display: "grid", placeItems: "center" }}>
-          <CircularProgress />
-        </Box>
+        <Card sx={{ borderRadius: 2.5 }}>
+          <CardContent>
+            <Skeleton variant="text" width="70%" height={28} sx={{ mb: 1 }} />
+            <Skeleton variant="text" width="40%" height={20} sx={{ mb: 2 }} />
+            <Skeleton variant="rounded" height={120} />
+          </CardContent>
+        </Card>
       ) : null}
 
       {error ? (
@@ -277,6 +283,7 @@ export function FaqDetailPage() {
           </CardContent>
         </Card>
       ) : null}
+      </Box>
     </Box>
   );
 }

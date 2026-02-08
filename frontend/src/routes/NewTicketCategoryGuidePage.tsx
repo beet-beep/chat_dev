@@ -1,11 +1,14 @@
-import { Box, Button, Card, CardContent, CircularProgress, Typography } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import { Box, Button, Card, CardContent, Skeleton, Typography, alpha } from "@mui/material";
+import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
+import SendIcon from "@mui/icons-material/Send";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 
 import { listTicketCategories } from "../api/support";
 import type { TicketCategory } from "../api/types";
 import { useT, useLanguage } from "../i18n";
+import { GradientHeader } from "../ui/GradientHeader";
+import { LanguageSelector } from "../i18n/LanguageSelector";
 
 export function NewTicketCategoryGuidePage() {
   const nav = useNavigate();
@@ -45,59 +48,74 @@ export function NewTicketCategoryGuidePage() {
   }, [cat, lang]);
 
   return (
-    <Box sx={{ px: 2.5, pt: 2.5, pb: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-        <Button startIcon={<ArrowBackIosNewIcon />} onClick={() => nav("/new")} sx={{ fontWeight: 900 }}>
-          {t("categoryGuide.back")}
-        </Button>
-        <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
-          {t("categoryGuide.title")}
-        </Typography>
-        <Box sx={{ width: 72 }} />
-      </Box>
+    <Box>
+      <GradientHeader
+        title={cat ? ((lang !== "ko" && cat.name_i18n?.[lang]) || cat.name) : t("categoryGuide.title")}
+        subtitle={(cat && ((lang !== "ko" && cat.guide_description_i18n?.[lang]) || cat.guide_description)) || ""}
+        icon={<SupportAgentOutlinedIcon />}
+        backTo="/new"
+        right={<LanguageSelector />}
+      />
 
+      <Box sx={{ px: 2.5, pt: 2, pb: 2, mt: -2 }}>
       {!cats ? (
-        <Box sx={{ py: 4, display: "grid", placeItems: "center" }}>
-          <CircularProgress />
-        </Box>
+        <Card sx={{ borderRadius: 2.5, p: 3 }}>
+          <Skeleton variant="text" width="60%" height={28} sx={{ mb: 1 }} />
+          <Skeleton variant="text" width="40%" height={20} sx={{ mb: 2 }} />
+          <Skeleton variant="rounded" height={120} />
+        </Card>
       ) : null}
 
       {cats && !cat ? (
-        <Typography color="text.secondary" sx={{ py: 2 }}>
-          {t("categoryGuide.notFound")}
-        </Typography>
+        <Card sx={{ textAlign: "center", py: 4, borderRadius: 2.5 }}>
+          <Typography color="text.secondary">
+            {t("categoryGuide.notFound")}
+          </Typography>
+        </Card>
       ) : null}
 
       {cat ? (
         <Box sx={{ display: "grid", gap: 2 }}>
-          <Card sx={{ bgcolor: "rgba(249,115,22,0.06)", border: "1px solid rgba(249,115,22,0.18)" }}>
+          <Card sx={{
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+            borderRadius: 2.5,
+          }}>
             <CardContent>
-              <Typography sx={{ fontWeight: 900, mb: 0.25 }}>
-                {(lang !== "ko" && cat.bot_title_i18n?.[lang]) || cat.bot_title || t("categoryGuide.defaultBot")} · {(lang !== "ko" && cat.name_i18n?.[lang]) || cat.name}
+              <Typography sx={{ fontWeight: 800, mb: 0.5, fontSize: "1rem" }}>
+                {(lang !== "ko" && cat.bot_title_i18n?.[lang]) || cat.bot_title || t("categoryGuide.defaultBot")}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
                 {(lang !== "ko" && cat.guide_description_i18n?.[lang]) || cat.guide_description || t("categoryGuide.defaultDesc")}
               </Typography>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card sx={{ borderRadius: 2.5 }}>
             <CardContent>
-              <Typography sx={{ fontWeight: 900, mb: 1 }}>{t("categoryGuide.checkTitle")}</Typography>
-              <Box sx={{ display: "grid", gap: 1.25 }}>
+              <Typography sx={{ fontWeight: 800, mb: 1.5, fontSize: "0.9375rem" }}>{t("categoryGuide.checkTitle")}</Typography>
+              <Box sx={{ display: "grid", gap: 1.5 }}>
                 {botBlocks.length ? (
                   botBlocks.map((b: any, idx: number) => {
                     if (b.type === "paragraph")
                       return (
-                        <Typography key={idx} variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.65 }}>
+                        <Typography key={idx} variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7, color: "text.secondary" }}>
                           {b.text}
                         </Typography>
                       );
-                    if (b.type === "image") return <img key={idx} src={b.url} alt="" style={{ maxWidth: "100%", height: "auto" }} />;
-                    if (b.type === "video") return <video key={idx} src={b.url} controls style={{ maxWidth: "100%" }} />;
+                    if (b.type === "image") return (
+                      <Box key={idx} sx={{ borderRadius: 2, overflow: "hidden" }}>
+                        <img src={b.url} alt="" style={{ maxWidth: "100%", height: "auto", display: "block" }} />
+                      </Box>
+                    );
+                    if (b.type === "video") return (
+                      <Box key={idx} sx={{ borderRadius: 2, overflow: "hidden" }}>
+                        <video src={b.url} controls style={{ maxWidth: "100%", display: "block" }} />
+                      </Box>
+                    );
                     if (b.type === "file")
                       return (
-                        <a key={idx} href={b.url} target="_blank" rel="noreferrer">
+                        <a key={idx} href={b.url} target="_blank" rel="noreferrer" style={{ color: "#2563EB" }}>
                           {b.name || b.url}
                         </a>
                       );
@@ -116,7 +134,16 @@ export function NewTicketCategoryGuidePage() {
             fullWidth
             size="large"
             variant="contained"
-            sx={{ py: 1.5, fontWeight: 900 }}
+            startIcon={<SendIcon />}
+            sx={{
+              py: 1.5,
+              fontWeight: 800,
+              borderRadius: 2,
+              boxShadow: "0 4px 14px rgba(249,115,22,0.3)",
+              "&:hover": {
+                boxShadow: "0 6px 20px rgba(249,115,22,0.4)",
+              }
+            }}
             component={RouterLink}
             to={`/new/compose?catId=${encodeURIComponent(String(cat.id))}&entry=category_guide`}
           >
@@ -124,6 +151,7 @@ export function NewTicketCategoryGuidePage() {
           </Button>
         </Box>
       ) : null}
+      </Box>
     </Box>
   );
 }

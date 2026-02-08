@@ -1,5 +1,7 @@
-import { Box, Typography, alpha } from "@mui/material";
+import { Box, IconButton, Typography, alpha } from "@mui/material";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function GradientHeader({
   title,
@@ -8,13 +10,25 @@ export function GradientHeader({
   // Modern gradient with depth
   gradient = "linear-gradient(180deg, #FF8C42 0%, #FFAB6B 40%, #FFC89E 80%, rgba(255,200,158,0.0) 100%)",
   icon,
+  onBack,
+  backTo,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
   gradient?: string;
   icon?: ReactNode;
+  /** Show back button with custom handler */
+  onBack?: () => void;
+  /** Show back button that navigates to this path */
+  backTo?: string;
 }) {
+  const nav = useNavigate();
+  const showBack = onBack || backTo;
+  const handleBack = () => {
+    if (onBack) onBack();
+    else if (backTo) nav(backTo);
+  };
   return (
     <Box
       sx={{
@@ -61,7 +75,22 @@ export function GradientHeader({
           gap: 2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {showBack && (
+            <IconButton
+              onClick={handleBack}
+              sx={{
+                color: "common.white",
+                bgcolor: alpha("#FFFFFF", 0.15),
+                backdropFilter: "blur(8px)",
+                width: 36,
+                height: 36,
+                "&:hover": { bgcolor: alpha("#FFFFFF", 0.25) },
+              }}
+            >
+              <ArrowBackIosNewIcon sx={{ fontSize: 16, ml: 0.25 }} />
+            </IconButton>
+          )}
           {icon && (
             <Box
               sx={{
